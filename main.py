@@ -1,112 +1,190 @@
-import customtkinter as ctk
-from PIL import Image
-import os
+import mysql.connector
+from mysql.connector import Error
+# En este código, estamos importando la biblioteca mysql.connector, que nos permite conectarnos a una base de datos MySQL desde Python. También importamos Error para manejar cualquier error que pueda ocurrir durante la conexión a la base de datos o la ejecución de consultas SQL.
+import sqlite3
 
-class LumeaApp(ctk.CTk):
-    def __init__(self):
-        super().__init__()
+def conectar_mysql():
+    "Estableciendo la conexion con la base de datos"
+    try:  
+        conexion = mysql.connector.connect(
+            host='127.0.0.1',  # Es el servidor local, nos sirve para conectarnos a una base de datos que está en nuestra propia computadora
+            port=3306,
+            user='root',  # Según lo que investigué, es el usuario por defecto 
+            password='Coco2021'  # Contraseña de MySQL 
+        )
+        if conexion.is_connected():
+            print("Conexión a MySQL exitosa!")
+            return conexion
+    except Error as e:
+        print(f"Error al conectar a MySQL: {e}")
+        return None 
 
-        # --- CONFIGURACIÓN DE VENTANA ---
-        self.title("LUMEA - Wellness Hub")
-        self.geometry("1100x700") # Tamaño grande 
-        self.configure(fg_color="#0B0E14")
 
-        # --- CARGAR IMAGEN DEL PLANETA ---
-        self.angulo = 0 # Ángulo inicial para la rotación del planeta
-        self.ruta_planeta = os.path.join(os.path.dirname(__file__), "planeta.png") # Esto nos permite cargar la imagen desde la misma carpeta del script, evitando problemas de rutas relativas al ejecutar desde otro lugar
-        
-        #PRUEBA PARA SABER QUE TODO ESTÁ CORRECTO CON LA RUTA DE LA IMAGEN
-        print(f"Buscando el planeta en: {self.ruta_planeta}")
-        try:
-            self.img_original = Image.open(self.ruta_planeta)
-            print("✅ ¡Archivo encontrado!")
-        except:
-            print("❌ ¡Archivo NO encontrado! Verifica el nombre y la carpeta.")
-            self.img_original = None
-
-        # --- 1. BARRA SUPERIOR (LOGO) ---
-        self.top_bar = ctk.CTkFrame(self, height=60, fg_color="transparent") # Transparente para que se integre con el fondo oscuro
-        self.top_bar.pack(fill="x", padx=40, pady=(30, 0)) # Espaciado para que no quede pegado al borde superior
-        
-        self.logo_label = ctk.CTkLabel(self.top_bar, text="LUMEA",  # Esa función ctk.CTkFont es para crear un objeto de fuente personalizada, lo que nos permite usar la fuente "Inter" con el tamaño y peso que queramos. Esto hace que el logo se vea más profesional y acorde con el diseño moderno que buscamos.
-                                       font=ctk.CTkFont(family="Inter", size=24, weight="bold"),
-                                       text_color="#FFFFFF")
-        self.logo_label.pack(side="left")
-
-        # --- 2. CONTENEDOR PRINCIPAL ---
-        self.main_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_container.pack(fill="both", expand=True, padx=40, pady=20)
-
-        # LADO IZQUIERDO: Texto y el planeta 
-        self.left_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        self.left_frame.pack(side="left", fill="both", expand=True)
-
-        # Slogan dinámico con fuente personalizada y tamaño grande para impacto visual :)
-        self.slogan = ctk.CTkLabel(self.left_frame, 
-                                   text="Diseña tu vida,\nun hábito a la vez.", 
-                                   font=ctk.CTkFont(family="Inter", size=45, weight="bold"),
-                                   text_color="white", justify="left")
-        self.slogan.place(relx=0.05, rely=0.2, anchor="nw")
-
-        # Planeta animado asomándose # Corregir esto porque no me gustó 
-        self.canvas_planeta = ctk.CTkLabel(self.left_frame, text="")
-        self.canvas_planeta.place(relx=-0.1, rely=1.0, anchor="sw")
-
-        # LADO DERECHO: TARJETA DE REGISTRO
-        self.right_container = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        self.right_container.pack(side="right", fill="both", expand=True)
-
-        # Aquí corregimos el error del para que la tarjeta de inicio no se deforme. 
-        self.login_card = ctk.CTkFrame(self.right_container, 
-                                       fg_color="#161B22", 
-                                       width=380, 
-                                       height=450,
-                                       corner_radius=25, 
-                                       border_width=2, 
-                                       border_color="#4f8ef7")
-        self.login_card.place(relx=0.5, rely=0.5, anchor="center")
-        self.login_card.pack_propagate(False) # Evita que los botones deformen la tarjeta
-
-        # --- CONTENIDO DE LA TARJETA ---
-        ctk.CTkLabel(self.login_card, text="Comenzar Viaje", 
-                     font=("Inter", 22, "bold"), text_color="white").pack(pady=(40, 25))
-
-        self.user_input = ctk.CTkEntry(self.login_card, placeholder_text="Nombre de usuario",
-                                       text_color="white", placeholder_text_color="#8888aa",
-                                       height=50, width=300, corner_radius=15,
-                                       fg_color="#0D1117", border_color="#30363D")
-        self.user_input.pack(pady=10)
-
-        self.btn_entrar = ctk.CTkButton(self.login_card, text="INICIAR EXPERIENCIA", 
-                                        height=55, width=300, corner_radius=15,
-                                        fg_color="#4f8ef7", hover_color="#3b6dbd",
-                                        font=("Inter", 14, "bold"))
-        self.btn_entrar.pack(pady=(30, 0))
-
-        # --- 3. INICIAR ANIMACIÓN ---
-        if self.img_original:
-            self.animar()
-
-    # --- LA FUNCIÓN DE ANIMACIÓN REFINADA ---
-    def animar(self):
-        if not self.img_original:
-            return
-
-        # Rotación lenta y elegante
-        self.angulo = (self.angulo - 0.2) % 360 
-        
-        # Filtro de alta calidad
-        img_rotada = self.img_original.rotate(self.angulo, resample=Image.BICUBIC)
-        
-        # Tamaño grande para que impacte
-        ctk_img = ctk.CTkImage(light_image=img_rotada, dark_image=img_rotada, size=(500, 500))
-        
-        self.canvas_planeta.configure(image=ctk_img)
-        self.canvas_planeta.image = ctk_img 
-        
-        self.after(16, self.animar)
-
-if __name__ == "__main__":
-    app = LumeaApp()
-    app.mainloop()
+class BaseDatos: 
+    def __init__(self): # esta función __init__ es un método especial de python, se ejecuta cada vez que tenemos una nueva instancia de la clase BaseDatos. Se encarga de hacer la conexión a la base de datos. 
+        # Conectando a MySQL
+        self.conexion = conectar_mysql()
+        # Si la conexión falla por algún motivo, nos aseguramos de que no explote, o manejamos el error:
+        if self.conexion is None:
+            print("No se pudo conectar a MySQL. Revisa tu servidor.")
+        else:
+            self.crear_tablas()
     
+    def crear_tablas(self): # Método para crear las tablas necesarias en la base de datos
+        cursor = self.conexion.cursor() # Crea un cursor para ejecutar comandos SQL en la base de datos
+        
+        cursor.execute('CREATE DATABASE IF NOT EXISTS lumea_db') # Crea la base de datos si no existe
+        cursor.execute('USE lumea_db') # Selecciona la base de datos para usarla
+
+               # 1. TABLA DE TRACKER DE COMIDA
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS historial_comida (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                alimento_detectado VARCHAR(255),
+                certeza_ia FLOAT,
+                calorias_aprox INT,
+                balanceado INT -- 1 para Sí, 0 para No
+            )
+        ''')
+        cursor.execute(''' 
+            CREATE TABLE IF NOT EXISTS perfil (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100),
+                email VARCHAR(100),
+                edad INT, 
+                genero VARCHAR(20), 
+                peso FLOAT,
+                altura INT
+            )
+        ''') 
+     ## MÓDULO DE HIDRATACIÓN --- TABLAS 
+     # Utilizamos AUTOINCREMENT para que cada vaso de agua sea una nueva fila en la tabla, con un ID único que se incrementa automáticamente cada vez que se agrega un nuevo registro de hidratación. Esto facilita el seguimiento de cada vaso de agua consumido por el usuario.
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS hidratacion (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                cantidad_mL INT
+                )
+        ''') # Ejecuta el comando SQL para crear la tabla de hidratación si no existe
+     ## TABLAS DE SUEÑO 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS sueño (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                horas_sueño FLOAT,
+                calidad_sueño VARCHAR(255)
+            )
+        ''') # Ejecuta el comando SQL para crear la tabla de sueño si no existe
+     ## TABLAS DE ACTIVIDAD FÍSICA
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS actividad_fisica (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                tipo_actividad VARCHAR(200),
+                duracion_minutos INT,
+                intensidad VARCHAR(50)
+            )
+        ''') # Ejecuta el comando SQL para crear la tabla de actividad física si no existe
+ # 6. TABLA MAESTRA DE ALIMENTOS (DICCIONARIO GLOBAL DE LUMEA)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tabla_alimentos (
+                alimento_codigo VARCHAR(100) PRIMARY KEY,
+                nombre_pantalla VARCHAR(100),
+                calorias INT,
+                es_saludable INT
+            )
+        ''')
+
+
+        self.conexion.commit() # commit es confirmar, lo que hace es guardar los cambios 
+        cursor.close()
+        print("🏛️ Estructura de tablas verificada en MySQL.")
+## __MÓDULO PERFIL___ 
+    def guardar_perfil(self, nombre, email, edad, genero, peso, altura):
+        cursor = self.conexion.cursor() # Crea un cursor para ejecutar comandos SQL en la base de datos
+    # INSERT OR REPLACE: Si el ID 1 ya existe, entonces lo borrará y lo reemplazará con los nuevos datos.
+    # para evitar que se dupliquen usuarios. 
+        cursor.execute('DELETE FROM perfil WHERE id = 1') ## Para que no se dupliquen usuarios 
+        cursor.execute('''
+            INSERT OR REPLACE INTO perfil (id, nombre, email, edad, genero, peso, altura)
+                   VALUES (1, %s, %s, %s, %s, %s, %s)
+        ''', (nombre, email, edad, genero, peso, altura)) # Ejecuta el comando SQL para insertar o reemplazar un registro en la tabla de perfil con los datos proporcionados.
+        self.conexion.commit() # Guarda los cambios realizados en la base de datos después de ejecutar el comando SQL para insertar o reemplazar un registro en la tabla de perfil. Esto asegura que los datos se guarden correctamente en la base de datos.
+        cursor.close() # Cierra el cursor después de ejecutar la consulta para liberar recursos
+
+    def obtener_perfil(self, nombre, email, edad, genero, peso, altura):
+        cursor = self.conexion.cursor() # Crea un cursor para ejecutar comandos en la base de datos
+        cursor.execute('SELECT * FROM perfil WHERE id = 1') # Ejecuta el comando SQL para seleccionar los datos del perfil con ID 1 de la tabla de perfil.
+        resultados = cursor.fetchall() # Devuelve una lista con todas las filas guardadas
+        cursor.close() # Cierra el cursor 
+        return resultados # Devuelve la lista de resultados obtenidos de la consulta
+                        
+    def registrar_comida(self, alimento, certeza, calorias, es_balanceado):
+        """Inserta un nuevo registro de comida detectada en la base de datos."""
+        if not self.conexion or not self.conexion.is_connected():
+            print("⚠️ No hay conexión activa a MySQL para registrar el alimento.")
+            return
+        try:
+            cursor = self.conexion.cursor() # El comando que sigue sirve para insertar un nuevo registro en la tabla historial_comida de la base de datos MySQL.
+            sql = ''' 
+                INSERT INTO historial_comida (alimento_detectado, certeza_ia, calorias_aprox, balanceado)
+                VALUES (%s, %s, %s, %s)
+            '''
+            valores = (alimento, certeza, calorias, es_balanceado)
+            cursor.execute(sql, valores)
+            self.conexion.commit()  # Confirma los cambios en el disco de tu Mac
+            cursor.close()
+            print("💾 ¡Registro guardado con éxito en tu servidor MySQL (lumea_db)!")  
+        except Error as e:
+            print(f"❌ Error al insertar datos en MySQL: {e}")
+        cursor.close()
+    
+    def obtener_historial_comida(self):
+        if not self.conexion or not self.conexion.is_connected():
+            return []
+        try:
+            # Usamos dictionary=True para que Flask reciba los datos ordenados con sus nombres
+            cursor = self.conexion.cursor(dictionary=True)
+            cursor.execute('SELECT * FROM historial_comida')
+            resultados = cursor.fetchall()
+            cursor.close()  # Ahora sí se cierra correctamente
+            return resultados  
+        except Exception as e:
+            print(f"Error al obtener historial: {e}")
+            return []
+    
+    def obtener_informacion_alimento(self, codigo_alimento):
+        """Busca en la tabla maestra las calorías y el nombre estético del alimento."""
+        if not self.conexion or not self.conexion.is_connected():
+            return None
+
+        try:
+            cursor = self.conexion.cursor(dictionary=True) # Devuelve el resultado como diccionario
+            sql = "SELECT nombre_pantalla, calorias, es_saludable FROM tabla_alimentos WHERE alimento_codigo = %s"
+            cursor.execute(sql, (codigo_alimento,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            return resultado
+        except mysql.connector.Error as e:
+            print(f"❌ Error al consultar tabla_alimentos: {e}")
+            return None
+        
+
+
+
+if __name__ == "__main__": # Solo se ejecutará esta parte si el archivo lo hace directamente
+    #Básicamente estamos diciendo que 
+    # la función __name__ es una variable especial en Python que se asigna automáticamente al nombre del módulo o archivo.
+    
+    print("Iniciando prueba de conexión...")
+    db = BaseDatos()
+    if db.conexion:
+        print("¡Base de Datos instanciada correctamente!")
+    else:
+        print("¡Algo falló en la conexión!")
+
+
+
+        
+
