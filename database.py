@@ -1,79 +1,176 @@
+import mysql.connector
+from mysql.connector import Error
 import sqlite3
+
+def conectar_mysql():
+    "Estableciendo la conexion con la base de datos"
+    try:  
+        conexion = mysql.connector.connect(
+            host='127.0.0.1',  # Servidor local 
+            port=3306,
+            user='root',  
+            password='Coco2021'  
+        )
+        if conexion.is_connected():
+            print("Conexión a MySQL lista")
+            return conexion
+    except Error as e:
+        print(f"Error al conectar a MySQL: {e}")
+        return None 
+
 
 class BaseDatos: 
     def __init__(self):
-        # Se supone que ahora estamos creando una conexión a una base de datos SQLite llamada 'lumea.db'
-        self.conexion = sqlite3.connect('lumea.db') # Establece la conexión a la base de datos
-        self.crear_tablas() # Llama al método para crear las tablas necesarias en la base de datos
+        self.conexion = conectar_mysql()
+        if self.conexion is None:
+            print("No se pudo conectar a MySQL. Revisa el servidor.")
+        else:
+            self.crear_tablas()
     
-    def crear_tablas(self): # Método para crear las tablas necesarias en la base de datos
-        cursor = self.conexion.cursor() # Crea un cursor para ejecutar comandos SQL en la base de datos
-        # Es la tabla de usuarios para el módulo del perfil 
-       # El comando SQL para crear la tabla de usuarios, si la tabla no existe ya. La tabla tiene tres columnas: id (clave primaria autoincremental), nombre (texto no nulo) y email (texto no nulo) 
-       
-        cursor.execute(''' 
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT,
-                email TEXT,
-                edad INTEGER, 
-                genero TEXT, 
-                peso REAL,
-                altura INTEGER
+    def crear_tablas(self): 
+        cursor = self.conexion.cursor() 
+        
+        cursor.execute('CREATE DATABASE IF NOT EXISTS lumea_db') 
+        cursor.execute('USE lumea_db') 
+
+               # 1. TABLA DE REGISTRO COMIDA
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS historial_comida (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                alimento_detectado VARCHAR(255),
+                certeza_ia FLOAT,
+                calorias_aprox INT,
+                balanceado INT -- 1 para Sí, 0 para No
             )
-        ''') # Ejecuta el comando SQL para crear la tabla de usuarios si no existe
-    
-     
-     ## MÓDULO DE HIDRATACIÓN --- TABLAS 
-     # Utilizamos AUTOINCREMENT para que cada vaso de agua sea una nueva fila en la tabla, con un ID único que se incrementa automáticamente cada vez que se agrega un nuevo registro de hidratación. Esto facilita el seguimiento de cada vaso de agua consumido por el usuario.
+        ''')
+        cursor.execute(''' 
+            CREATE TABLE IF NOT EXISTS perfil (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100),
+                email VARCHAR(100),
+                edad INT, 
+                genero VARCHAR(20), 
+                peso FLOAT,
+                altura INT
+            )
+        ''') 
+     ## TABLAS DE REGISTRO HIDRATACION   
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS hidratacion (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fecha DATE DEFAULT CURRENT_DATE,      
-                cantidad_mL INTEGER
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                cantidad_mL INT
                 )
-        ''') # Ejecuta el comando SQL para crear la tabla de hidratación si no existe
-
-
-## TABLAS DE SUEÑO 
+        ''') 
+     ## TABLAS REGISTRO DE SUEÑO 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sueño (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fecha DATE DEFAULT CURRENT_DATE,      
-                horas_sueño REAL,
-                calidad_sueño TEXT
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                horas_sueño FLOAT,
+                calidad_sueño VARCHAR(255)
             )
-        ''') # Ejecuta el comando SQL para crear la tabla de sueño si no existe
-
-
-## TABLAS DE ACTIVIDAD FÍSICA
+        ''') 
+     ## TABLAS DE ACTIVIDAD FÍSICA
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS actividad_fisica (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fecha DATE DEFAULT CURRENT_DATE,      
-                tipo_actividad TEXT,
-                duracion_minutos INTEGER,
-                intensidad TEXT
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fecha DATE DEFAULT (CURRENT_DATE),      
+                tipo_actividad VARCHAR(200),
+                duracion_minutos INT,
+                intensidad VARCHAR(50)
             )
-        ''') # Ejecuta el comando SQL para crear la tabla de actividad física si no existe
- 
-        self.conexion.commit() # commit es confirmar, lo que hace es guardar los cambios 
-# realizados en la base de datos después de ejecutar el comando SQL para crear la tabla de usuarios. 
-# Esto asegura que la tabla se cree correctamente en la base de datos.
-      
-
-## __MÓDULO PERFIL___ 
-def guardar_perfil(self, nombre, email, edad, genero, peso, altura):
-    cursor = self.conexion.cursor() # Crea un cursor para ejecutar comandos SQL en la base de datos
-    # INSERT OR REPLACE: Si el ID 1 ya existe, entonces lo borrará y lo reemplazará con los nuevos datos.
-    # para evitar que se dupliquen usuarios. 
-    cursor.execute('''
-            INSERT OR REPLACE INTO perfil (id, nombre, email, edad, genero, peso, altura)
-                   VALUES (1, ?, ?, ?, ?, ?, ?)
-        ''', (nombre, email, edad, genero, peso, altura)) # Ejecuta el comando SQL para insertar o reemplazar un registro en la tabla de perfil con los datos proporcionados.
-    self.conexion.commit() # Guarda los cambios realizados en la base de datos después de ejecutar el comando SQL para insertar o reemplazar un registro en la tabla de perfil. Esto asegura que los datos se guarden correctamente en la base de datos.
+        ''') 
+ # 6. TABLA MAESTRA DE ALIMENTOS (DICCIONARIO GLOBAL DE LUMEA)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tabla_alimentos (
+                alimento_codigo VARCHAR(100) PRIMARY KEY,
+                nombre_pantalla VARCHAR(100),
+                calorias INT,
+                es_saludable INT
+            )
+        ''')
+        self.conexion.commit() 
+        cursor.close()
+        print("🏛️ Estructura de tablas verificada en MySQL.")
         
-def obtener_perfil(self):
-    cursor = self.conexion.cursor() # Crea un cursor para ejecutar comandos SQL en la base de datos
-    cursor.execute('SELECT * FROM perfil WHERE id = 1') # Ejecuta el comando SQL para seleccionar los datos del perfil con ID 1 de la tabla de perfil.
-    return cursor.fetchone() # Devuelve el resultado de la consulta como una "tupla", que es una lista de los datos. Si no se encuentra ningún registro con ID 1, devolverá None.
+## __MÓDULO PERFIL___ 
+    def guardar_perfil(self, nombre, email, edad, genero, peso, altura):
+        cursor = self.conexion.cursor() 
+        cursor.execute('DELETE FROM perfil WHERE id = 1')  
+        cursor.execute('''
+            INSERT OR REPLACE INTO perfil (id, nombre, email, edad, genero, peso, altura)
+                   VALUES (1, %s, %s, %s, %s, %s, %s)
+        ''', (nombre, email, edad, genero, peso, altura)) # Ejecuta el comando SQL para insertar o reemplazar un registro en la tabla de perfil con los datos proporcionados.
+        self.conexion.commit()
+        cursor.close() 
+
+    def obtener_perfil(self, nombre, email, edad, genero, peso, altura):
+        cursor = self.conexion.cursor()
+        cursor.execute('SELECT * FROM perfil WHERE id = 1') 
+        resultados = cursor.fetchall() 
+        cursor.close() 
+        return resultados 
+                        
+    def registrar_comida(self, alimento, certeza, calorias, es_balanceado):
+        """Inserta un nuevo registro de comida detectada en la base de datos."""
+        if not self.conexion or not self.conexion.is_connected():
+            print("No hay conexión activa a MySQL para registrar el alimento.")
+            return
+        try:
+            cursor = self.conexion.cursor() 
+            sql = ''' 
+                INSERT INTO historial_comida (alimento_detectado, certeza_ia, calorias_aprox, balanceado)
+                VALUES (%s, %s, %s, %s)
+            '''
+            valores = (alimento, certeza, calorias, es_balanceado)
+            cursor.execute(sql, valores)
+            self.conexion.commit()  
+            cursor.close()
+            print("Registro guardado")  
+        except Error as e:
+            print(f"Error al insertar datos en MySQL: {e}")
+        cursor.close()
+    
+    def obtener_historial_comida(self):
+        if not self.conexion or not self.conexion.is_connected():
+            return []
+        try:
+            cursor = self.conexion.cursor(dictionary=True)
+            cursor.execute('SELECT * FROM historial_comida')
+            resultados = cursor.fetchall()
+            cursor.close() 
+            return resultados  
+        except Exception as e:
+            print(f"Error al obtener historial: {e}")
+            return []
+    
+    def obtener_informacion_alimento(self, codigo_alimento):
+        """Busca en la tabla maestra las calorías y el nombre del alimento."""
+        if not self.conexion or not self.conexion.is_connected():
+            return None
+
+        try:
+            cursor = self.conexion.cursor(dictionary=True) 
+            sql = "SELECT nombre_pantalla, calorias, es_saludable FROM tabla_alimentos WHERE alimento_codigo = %s"
+            cursor.execute(sql, (codigo_alimento,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            return resultado
+        except mysql.connector.Error as e:
+            print(f" Error al consultar tabla_alimentos: {e}")
+            return None
+        
+
+
+
+if __name__ == "__main__":
+    print("Iniciando prueba")
+    db = BaseDatos()
+    if db.conexion:
+        print("Conexión exitosa")
+    else:
+        print("Error en la conexión")
+
+
