@@ -1,21 +1,21 @@
 import os # Es un módulo que proporciona una forma de interactuar con el sistema operativo, permitiendo realizar operaciones como leer y escribir archivos, manipular rutas de archivos, y obtener información del entorno del sistema. 
 import keras
-import numpy as np # Biblioteca para el cálculo en python 
-import tensorflow as tf # Biblioteca de código abierto para el aprendizaje automático y la inteligencia artificial, utilizada para construir y entrenar modelos de aprendizaje profundo.
+import numpy as np  
+import tensorflow as tf 
 from flask import Flask, request, jsonify # Flask es un microframework web para Python que permite crear aplicaciones web de manera sencilla. request se utiliza para manejar las solicitudes HTTP entrantes y jsonify se utiliza para convertir datos en formato JSON para enviarlos como respuesta.   
 from flask_cors import CORS # Flask-CORS es una extensión de Flask que permite habilitar el intercambio de recursos de origen cruzado (CORS) en aplicaciones web, lo que permite que los navegadores realicen solicitudes a dominios diferentes al del servidor de la aplicación.
 from werkzeug.utils import secure_filename # secure_filename es una función de la biblioteca Werkzeug que se utiliza para asegurar que los nombres de archivo sean seguros y válidos, evitando problemas de seguridad al guardar archivos en el servidor.
 from database import BaseDatos # Importa la clase BaseDatos desde el módulo database, que probablemente contiene la lógica para interactuar con la base de datos de la aplicación.
 
-# Antes que nada, hay que inicializar Flask y habilitar CORS 
+# Inicializar Flask y habilitar CORS 
 # Esto se hace para permitir que la aplicación web pueda recibir solicitudes desde diferentes dominios, lo cual es útil en entornos de desarrollo y producción donde el frontend y el backend pueden estar en servidores distintos.
 app = Flask(__name__) # Crea una instancia de la aplicación Flask, que servirá como el núcleo de la aplicación web.
-CORS(app) # Habilita CORS para la aplicación Flask, permitiendo que se realicen solicitudes desde diferentes dominios.
+CORS(app)
 
 # Configuración e inicialización de la base de datos
-db = BaseDatos() # Crea una instancia de la clase BaseDatos, para la conexión y manejo de la base de datos.
+db = BaseDatos() 
 print ("Conexión a la base de datos establecida, Flask inicializado y CORS habilitado.") 
-modelo_ia = tf.keras.applications.MobileNetV2(weights='imagenet') # Carga el modelo preentrenado MobileNetV2 con pesos entrenados en el conjunto de datos ImageNet, que se utilizará para realizar predicciones de clasificación de imágenes.
+modelo_ia = tf.keras.applications.MobileNetV2(weights='imagenet') # Cargar el modelo 
 
 clases_comida = [
 'apple_pie', 'baby_back_ribs', 'baklava', 'beef_carpaccio', 'beef_tartare', 
@@ -150,48 +150,46 @@ def formatear_nombre(nombre_tecnico):
     else: 
         return nombre_tecnico.replace('_', ' ').title()
 
-@app.route('/predecir', methods=['POST']) # Define una ruta en la aplicación Flask que escucha solicitudes POST en la URL '/predecir'.  
+@app.route('/predecir', methods=['POST']) # Ruta en Flask para solicitudes POST en una URL: '/predecir'.  
 def predecir():
     """Predecir el nombre de un alimento."""
     # 1. Verificar si realmente se envió un archivo de imagen
     if 'file' not in request.files:
-        return jsonify({'error': 'No se encontró el campo de imagen en la petición.'}), 400
+        return jsonify({'error': 'No se encontró la imagen en la petición.'}), 400
     file = request.files['file']
-    
-    # 2. Validar que el usuario realmente haya seleccionado o tomado una foto
     if file.filename == '':
         return jsonify({'error': 'No se seleccionó ningún archivo o la imagen está vacía.'}), 400
 
     try:
-        img = tf.image.decode_jpeg(file.read(), channels=3) # Decodifica la imagen JPEG enviada en la solicitud y la convierte en un tensor de TensorFlow con 3 canales (RGB).
+        img = tf.image.decode_jpeg(file.read(), channels=3)  # Actualización necesaria: Agregar formatos
         img = tf.image.resize(img, (224, 224)) 
-        img_array = tf.keras.preprocessing.image.img_to_array(img).copy() # Convierte el tensor de imagen en un array de NumPy, que es el formato esperado por el modelo de IA.
-        img_array = np.expand_dims(img_array, axis=0) # Agrega una dimensión adicional al array de imagen para que tenga la forma (1, 224, 224, 3), que es la forma esperada por el modelo de IA.
-        img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array) # Preprocesa la imagen para que sea compatible con el modelo MobileNetV2, normalizando los valores de píxeles. 
+        img_array = tf.keras.preprocessing.image.img_to_array(img).copy() 
+        img_array = np.expand_dims(img_array, axis=0) 
+        img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array) 
 
-        predicciones = modelo_ia.predict(img_array) # Realiza la predicción utilizando el modelo de IA cargado previamente, obteniendo un array de probabilidades para cada clase de alimento.
-        # Un  array (también conocido como arreglo o vector) es una estructura de datos que permite almacenar una colección de elementos del mismo tipo bajo un mismo nombre
+        predicciones = modelo_ia.predict(img_array) 
+        # Para recordar: Un  array es una estructura de datos que permite almacenar una colección de elementos del mismo tipo bajo un mismo nombre
         
         import keras
-        decode_predictions = keras.applications.mobilenet_v2.decode_predictions# Importa la función decode_predictions, que se utiliza para convertir las predicciones del modelo en etiquetas de clase legibles.
-        resultados = decode_predictions(predicciones, top=1)[0] # Decodifica las predicciones, obteniendo la clase con la mayor probabilidad (top-1) y sus detalles asociados.
-        _, nombre_tecnico, probabilidad = resultados[0] # Lista de tres datos, ese guión bajo es un placeholder para el ID de la clase, hace que lo ignoremos. 
-        nombre_amigable = formatear_nombre(nombre_tecnico) # Llama a la función formatear_nombre para obtener un nombre más amigable y legible para el usuario
-        mejor_certeza = float(probabilidad) * 100.0 # Convierte la probabilidad a un valor de punto flotante para su posterior uso.
+        decode_predictions = keras.applications.mobilenet_v2.decode_predictions
+        resultados = decode_predictions(predicciones, top=1)[0]. # Adoro los parámetros. Facilitan todo... 
+        _, nombre_tecnico, probabilidad = resultados[0] 
+        nombre_amigable = formatear_nombre(nombre_tecnico) 
+        mejor_certeza = float(probabilidad) * 100.0 
 
-        info_alimento = db.obtener_informacion_alimento(nombre_tecnico) # Llama al método obtener_informacion_alimento de la clase BaseDatos para obtener información adicional sobre el alimento predicho, utilizando el nombre técnico como clave de búsqueda.
+        info_alimento = db.obtener_informacion_alimento(nombre_tecnico) 
         if info_alimento:
             nombre_amigable = info_alimento.get("nombre_pantalla", formatear_nombre(nombre_tecnico))
             calorias = info_alimento.get("calorias", 250)
             es_balanceado = info_alimento.get("es_saludable", 0)
         else: 
             nombre_amigable = formatear_nombre(nombre_tecnico)
-            calorias = 250 # Valor por defecto si no se encuentra información en la base de datos.
-            es_balanceado = 0 # Valor por defecto si no se encuentra información en la base de datos.
+            calorias = 250 
+            es_balanceado = 0 
+            # valores por defecto
+        guardado_exitoso = False 
 
-        guardado_exitoso = False # Aquí se inicializa la variable guardado_exitoso como False, indicando que aún no se ha registrado la comida en la base de datos.
-
-        if mejor_certeza >= 70.0: # Confianza del 70% o más, si no no se guarda en la base de datos.
+        if mejor_certeza >= 70.0: # ¿Deberíamos exigir más confianza?
             if db.conexion and db.conexion.is_connected():
                 db.registrar_comida(nombre_amigable, float(mejor_certeza), calorias=calorias, es_balanceado=es_balanceado)
                 guardado_exitoso = True
@@ -212,15 +210,12 @@ def predecir():
                 'certeza': float(mejor_certeza),
                 'alimento': nombre_amigable
             }
-        
-        return jsonify(respuesta), 200 # 200 es el código de estado HTTP que indica que la solicitud se ha procesado correctamente y se devuelve la respuesta en formato JSON con los resultados de la predicción y el estado del guardado en la base de datos.
+        return jsonify(respuesta), 200 
     except Exception as e:
-        return jsonify({'error': f'Error al procesar la imagen: {str(e)}'}), 500 # 500 es el código de estado HTTP que indica un error interno del servidor, y se devuelve un mensaje de error en formato JSON con detalles sobre la excepción que ocurrió durante el procesamiento de la imagen.
-
-def obtener_informacion_nutricional(codigo_predicho): #parámetro :) 
+def obtener_informacion_nutricional(codigo_predicho):  
     """
     Busca un alimento por su código en MySQL y devuelve sus valores nutricionales.
-    Es decir, es la API interna entre la predicción de la IA y el usuario.
+    Es decir, es como una API interna entre la predicción de la IA y el usuario.
     """
     db = BaseDatos()
     if not db.conexion or not db.conexion.is_connected():
@@ -230,23 +225,19 @@ def obtener_informacion_nutricional(codigo_predicho): #parámetro :)
         cursor = db.conexion.cursor(dictionary=True) 
         sql = "SELECT nombre_pantalla, calorias, es_saludable FROM tabla_alimentos WHERE alimento_codigo = %s"
         cursor.execute(sql, (codigo_predicho,))
-
-        resultado = cursor.fetchone() # Cursor.fetchone es un método de Python, te permite revisar una sola fila de los resultados de la consulta a la base de datos 
-        
-
+        resultado = cursor.fetchone() 
+    
         if resultado:
             return {
                 "encontrado": True,
                 "nombre": resultado["nombre_pantalla"],
                 "calorias": resultado["calorias"],
                 "es_saludable": bool(resultado["es_saludable"])
-
             }
         else: 
-            return {"encontrado": False, "error": "Alimento no registrado en el inventario de la app"}
-
+            return {"encontrado": False, "error": "Alimento no registrado en la base de datos de la app"}
     except Exception as e:
-        return {"error": f"No se ha podido consultar al backend"}
+        return {"error": f"No hay conexión con el backend"}
     finally: 
         if 'cursor' in locals(): 
             cursor.close
@@ -254,7 +245,7 @@ def obtener_informacion_nutricional(codigo_predicho): #parámetro :)
 
 @app.route('/historial', methods=['GET'])
 def obtener_historial():
-    """ Endpoint para obtener todas las comidas registradas"""
+    """Obtener todas las comidas registradas"""
     try: 
         historial = db.obtener_historial_comida()
         return jsonify({
@@ -262,35 +253,28 @@ def obtener_historial():
             'cantidad_registros': len(historial),
             'historial': historial
         }), 200 
-    
     except Exception as e: 
         return jsonify({'error': f'Error al consultar el historial: {str(e)}'}), 500
 
 @app.route('/alimentos', methods= ['GET'])
 def lista_alimentos():
-    """Endpoint para obtener la lista de alimentos para seleccionar"""
+    """Obtener la lista de alimentos para seleccionar"""
     try: 
-        # Para hacer consultas necesitamos algo; un cursor...
         cursor = db.conexion.cursor(dictionary= True) 
-        # En esta parte estamos especificando que
-        sql = "Select alimento_codigo, nombre_pantalla, calorias FROM tabla_alimentos" # Tabla alimentos es la tabla maestra.
-        #Consulta para sql 
-
-        cursor.execute(sql) # Dentro del paréntesis va sql porque es un parámetro obligatorio; necesita recibir un string. 
-        alimentos = cursor.fetchall() # guardamos la información del cursor en una variable llamada alimentos
-        cursor.close() #Guardamos y cerramos el cursor. 
-
+        sql = "Select alimento_codigo, nombre_pantalla, calorias FROM tabla_alimentos" 
+        cursor.execute(sql) 
+        alimentos = cursor.fetchall()
+        cursor.close() 
         return jsonify({
             'success': True, 
             'cantidad': len(alimentos),
             'alimentos': alimentos
         }), 200 
-
-
-
     except Exception as e: 
         return jsonify({'Error': f'Error al obtener la lista de alimentos: {str(e)}'}), 500 # 500 significa error
 
 
 if __name__ == '__main__':
-    app.run(debug=True) # Inicia la aplicación Flask en modo de depuración, lo que permite ver mensajes de error detallados y reiniciar automáticamente el servidor cuando se realizan cambios en el código.
+    app.run(debug=True) 
+
+## Normalmente utilizo los comentarios para que se me quede lo que he aprendido sobre algún método, parámetro, libreria o artilugio nuevo. 
