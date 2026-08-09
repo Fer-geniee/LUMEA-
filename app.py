@@ -1,23 +1,19 @@
-import os # Es un módulo que proporciona una forma de interactuar con el sistema operativo, permitiendo realizar operaciones como leer y escribir archivos, manipular rutas de archivos, y obtener información del entorno del sistema. 
+import os 
 import keras
 import io 
-import numpy as np # Biblioteca para el cálculo en python 
-import tensorflow as tf # Biblioteca de código abierto para el aprendizaje automático y la inteligencia artificial, utilizada para construir y entrenar modelos de aprendizaje profundo.
-from flask import Flask, request, jsonify # Flask es un microframework web para Python que permite crear aplicaciones web de manera sencilla. request se utiliza para manejar las solicitudes HTTP entrantes y jsonify se utiliza para convertir datos en formato JSON para enviarlos como respuesta.   
-from flask_cors import CORS # Flask-CORS es una extensión de Flask que permite habilitar el intercambio de recursos de origen cruzado (CORS) en aplicaciones web, lo que permite que los navegadores realicen solicitudes a dominios diferentes al del servidor de la aplicación.
-from werkzeug.utils import secure_filename # secure_filename es una función de la biblioteca Werkzeug que se utiliza para asegurar que los nombres de archivo sean seguros y válidos, evitando problemas de seguridad al guardar archivos en el servidor.
-from database import BaseDatos # Importa la clase BaseDatos desde el módulo database, que probablemente contiene la lógica para interactuar con la base de datos de la aplicación.
+import numpy as np 
+import tensorflow as tf 
+from flask import Flask, request, jsonify    
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+from database import BaseDatos 
 
-# Antes que nada, hay que inicializar Flask y habilitar CORS 
-# Esto se hace para permitir que la aplicación web pueda recibir solicitudes desde diferentes dominios, lo cual es útil en entornos de desarrollo y producción donde el frontend y el backend pueden estar en servidores distintos.
-app = Flask(__name__) # Crea una instancia de la aplicación Flask, que servirá como el núcleo de la aplicación web.
-CORS(app) # Habilita CORS para la aplicación Flask, permitiendo que se realicen solicitudes desde diferentes dominios.
+app = Flask(__name__)
+CORS(app) 
 
-# Configuración e inicialización de la base de datos
-db = BaseDatos() # Crea una instancia de la clase BaseDatos, para la conexión y manejo de la base de datos.
+db = BaseDatos()
 print ("Conexión a la base de datos establecida, Flask inicializado y CORS habilitado.") 
-modelo_ia = tf.keras.applications.MobileNetV2(weights='imagenet') # Carga el modelo preentrenado MobileNetV2 con pesos entrenados en el conjunto de datos ImageNet, que se utilizará para realizar predicciones de clasificación de imágenes.
-
+modelo_ia = tf.keras.applications.MobileNetV2(weights='imagenet') 
 def formatear_nombre(nombre_tecnico):
     ""
     "Retorna el nombre del alimento, dada la calse del modelo de IA."
@@ -143,8 +139,8 @@ def predecir():
         img_bytes = file.read() 
         img = tf.image.decode_jpeg(file.read(), channels=3)
         img = tf.image.resize(img, (224, 224)) 
-        img_array = tf.keras.preprocessing.image.img_to_array(img) # Convierte el tensor de imagen en un array de NumPy, que es el formato esperado por el modelo de IA.
-        img_array = np.expand_dims(img_array, axis=0) # Agrega una dimensión adicional al array de imagen para que tenga la forma (1, 224, 224, 3), que es la forma esperada por el modelo de IA.
+        img_array = tf.keras.preprocessing.image.img_to_array(img) 
+        img_array = np.expand_dims(img_array, axis=0) 
         img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array) 
 
         predicciones = modelo_ia.predict(img_array) 
