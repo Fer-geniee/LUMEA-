@@ -1,6 +1,4 @@
-import os # Es un módulo que proporciona una forma de interactuar con el sistema operativo, permitiendo realizar operaciones como leer y escribir archivos, manipular rutas de archivos, y obtener información del entorno del sistema. 
 import keras
-import io 
 import numpy as np # Biblioteca para el cálculo en python 
 import tensorflow as tf # Biblioteca de código abierto para el aprendizaje automático y la inteligencia artificial, utilizada para construir y entrenar modelos de aprendizaje profundo.
 from flask import Flask, request, jsonify # Flask es un microframework web para Python que permite crear aplicaciones web de manera sencilla. request se utiliza para manejar las solicitudes HTTP entrantes y jsonify se utiliza para convertir datos en formato JSON para enviarlos como respuesta.   
@@ -166,7 +164,7 @@ def predecir():
         guardado_exitoso = False
 
         if mejor_certeza >= 70.0: 
-            guardado_exitoso = db.guardar_comida(nombre_tecnico, 
+            guardado_exitoso = db.registrar_comida(nombre_tecnico, 
                 nombre_amigable, 
                 calorias, 
                 es_balanceado, 
