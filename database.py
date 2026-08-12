@@ -6,7 +6,7 @@ import csv
 def conectar_mysql():
     """Establece la conexión inicial con el servidor MySQL."""
     try:  
-        conexion = mysql.connector.connect(
+        conexion = mysql.connector.connect( # OCULTAR 
             host='127.0.0.1',  # Este servidor se tiene que cambiar cuando se presente. 
             port=3306,
             user='root',       
