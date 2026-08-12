@@ -10,7 +10,7 @@ def conectar_mysql():
             host='127.0.0.1',  # Este servidor se tiene que cambiar cuando se presente. 
             port=3306,
             user='root',       
-            password='Coco2021' 
+            password= '#####' # CREAR ARCHIVO ENV 
         )
         if conexion.is_connected():
             return conexion
