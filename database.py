@@ -72,11 +72,11 @@ class BaseDatos:
 
             # 4. TABLA DE SUEÑO 
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS sueño (
+                CREATE TABLE IF NOT EXISTS sueno (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     fecha DATE DEFAULT (CURRENT_DATE),      
-                    horas_sueño FLOAT,
-                    calidad_sueño VARCHAR(255)
+                    horas_sueno FLOAT,
+                    calidad_sueno VARCHAR(255)
                 )
             ''')
 
@@ -103,7 +103,7 @@ class BaseDatos:
 
             self.conexion.commit()
             print("Estructura de tablas verificada en MySQL (lumea_db).")
-            self._poblar_alimentos_iniciales(cursor)
+            self._poblar_alimentos_iniciales(cursor) #------------- NO EXISTE EL METODO _poblar_alimentos_iniciales, se debe crear para poblar la tabla de alimentos con datos iniciales si es necesario.
 
         except Error as e:
             print(f"Error al crear tablas en MySQL: {e}")
@@ -149,7 +149,7 @@ class BaseDatos:
             cursor.close()
 
     # ================= MÓDULO PERFIL =================
-    def guardar_perfil(self, nombre, email, edad, genero, peso, altura):
+    def guardar_perfil(self, nombre, email, edad, genero, peso, altura): #------ usar autenticacion o pedir el id del usuario para guardar su perfil, actualmente se guarda en el perfil con id=1
         """Guarda o actualiza el perfil principal (ID=1)."""
         if not self.conexion or not self.conexion.is_connected():
             return False
@@ -169,7 +169,7 @@ class BaseDatos:
         finally:
             cursor.close()
 
-    def obtener_perfil(self):
+    def obtener_perfil(self): #------- NO SE USA AUN EN APP.PY, pero se puede usar para mostrar el perfil del usuario en la app.
         """CORRECCIÓN: Ya no exige parámetros para leer el perfil del usuario."""
         if not self.conexion or not self.conexion.is_connected():
             return None
@@ -185,7 +185,7 @@ class BaseDatos:
             cursor.close()
 
     # ================= MÓDULO HISTORIAL Y ALIMENTOS =================
-    def registrar_comida(self, alimento, certeza, calorias, es_balanceado):
+    def registrar_comida(self, alimento, certeza, calorias, es_balanceado): #------VERIFICAR ARGUMENTOS EN APP NO COINCIDEN CON LOS QUE SE USAN EN APP.PY, SE DEBE USAR EL CODIGO DEL ALIMENTO PARA OBTENER LA INFORMACION DE LA TABLA MAESTRA Y GUARDARLO EN HISTORIAL
         """Inserta un registro de comida procesada por la IA."""
         if not self.conexion or not self.conexion.is_connected():
             print("No hay conexión activa a MySQL.")
@@ -237,7 +237,7 @@ class BaseDatos:
             cursor.close()
 
     # ================= MÓDULOS SALUD =================
-    def registrar_hidratacion(self, cantidad_ml):
+    def registrar_hidratacion(self, cantidad_ml): #---------- NO EXISTE EN APP.PY, SE DEBE USAR PARA REGISTRAR EL AGUA TOMADA POR EL USUARIO, SE PUEDE USAR UN BOTON EN LA APP PARA REGISTRAR EL AGUA TOMADA.
         """Registra el agua."""
         if not self.conexion or not self.conexion.is_connected():
             return False

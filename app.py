@@ -1,6 +1,5 @@
-import os # Es un módulo que proporciona una forma de interactuar con el sistema operativo, permitiendo realizar operaciones como leer y escribir archivos, manipular rutas de archivos, y obtener información del entorno del sistema. 
+ # Es un módulo que proporciona una forma de interactuar con el sistema operativo, permitiendo realizar operaciones como leer y escribir archivos, manipular rutas de archivos, y obtener información del entorno del sistema. 
 import keras
-import io 
 import numpy as np # Biblioteca para el cálculo en python 
 import tensorflow as tf # Biblioteca de código abierto para el aprendizaje automático y la inteligencia artificial, utilizada para construir y entrenar modelos de aprendizaje profundo.
 from flask import Flask, request, jsonify # Flask es un microframework web para Python que permite crear aplicaciones web de manera sencilla. request se utiliza para manejar las solicitudes HTTP entrantes y jsonify se utiliza para convertir datos en formato JSON para enviarlos como respuesta.   
@@ -140,7 +139,6 @@ def predecir():
         return jsonify({'error': 'No se seleccionó ningún archivo o la imagen está vacía.'}), 400
 
     try:
-        img_bytes = file.read() 
         img = tf.image.decode_jpeg(file.read(), channels=3)
         img = tf.image.resize(img, (224, 224)) 
         img_array = tf.keras.preprocessing.image.img_to_array(img) # Convierte el tensor de imagen en un array de NumPy, que es el formato esperado por el modelo de IA.
@@ -166,7 +164,7 @@ def predecir():
         guardado_exitoso = False
 
         if mejor_certeza >= 70.0: 
-            guardado_exitoso = db.guardar_comida(nombre_tecnico, 
+            guardado_exitoso = db.registrar_comida(nombre_tecnico, 
                 nombre_amigable, 
                 calorias, 
                 es_balanceado, 
@@ -196,7 +194,7 @@ def predecir():
         return jsonify({'error': f'Error al procesar la imagen: {str(e)}'}), 500 
 
 # ====== Historial ====== 
-@ app.route('/historial', methods=['GET'])
+@app.route('/historial', methods=['GET'])
 def obtener_historial_comida():
     try:
         historial = db.obtener_historial_comida()
@@ -210,7 +208,7 @@ def obtener_historial_comida():
 
 
 # ===== Alimentos disponibles =====
-@ app.route('/alimentos', methods=['GET'])
+@app.route('/alimentos', methods=['GET'])
 def lista_alimentos():
     try:
         if not db.conexion or not db.conexion.is_connected():
@@ -232,7 +230,7 @@ def lista_alimentos():
 
 # ==== Cargar aliemntos desde CSV/EXCEL ====
 @app.route('/cargar-alimentos-csv', methods=['POST'])
-def cargar_alimentos_csv():
+def cargar_alimentos_desde_csv():
     """
     Permite subir un archivo .csv con la estructura:
     alimento_codigo,nombre_pantalla,calorias,es_saludable
@@ -246,7 +244,7 @@ def cargar_alimentos_csv():
 
     try:
         contenido_csv = file.read().decode('utf-8')
-        exito, mensaje = db.cargar_alimentos_desde_csv_contenido(contenido_csv)
+        exito, mensaje = db.cargar_alimentos_desde_csv(contenido_csv)
         
         if exito:
             return jsonify({'success': True, 'mensaje': mensaje}), 200
